@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,15 +16,16 @@ namespace Sudoku
 {
     public partial class SudokuWindow
     {
-        private async void LoadBtn_Click(object sender, RoutedEventArgs e)
+        private async void LoadBtn_Click(object sender, RoutedEventArgs e) => await Controller.LoadSudokuFile();
+
+        private async void SolveBtn_Click(object sender, RoutedEventArgs e) => await Controller.SolveSudoku();
+
+        private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            var filepath = AskForFile();
-            var data = new SudokuGrid(await CSVToArray(filepath));
-            data.DebugPrint();
-            await CreateGameGrid(data);
+            ConsoleText.Text = string.Empty;
         }
 
-        protected string AskForFile()
+        public string AskForFile()
         {
             var diag = new OpenFileDialog
             {
@@ -37,33 +39,7 @@ namespace Sudoku
             return diag.FileName;
         }
 
-        protected async Task<int[][]> CSVToArray(string filepath)
-        {
-            var rows = File.ReadAllLines(filepath);
-            var length = rows.First().Split(',').Count();
-
-            if (!Helper.IsSquareNumber(length))
-            {
-                // Can't load: Need to do something here
-            }
-
-            var cols = new int[length][];
-
-            for (var i = 0; i < rows.Length; i++)
-            {
-                var cells = rows[i].Split(',');
-                for (var ii = 0; ii < cells.Length; ii++)
-                {
-                    cols[i] ??= new int[length];
-                    cols[i][ii] = int.Parse(cells[ii].Trim());
-                }
-            }
-
-
-            return cols;
-        }
-
-        protected async Task CreateGameGrid(SudokuGrid gameData)
+        public async Task DrawGameGrid(SudokuGrid gameData)
         {
             GameGrid.Children.Clear();
             GameGrid.ColumnDefinitions.Clear();
@@ -78,7 +54,7 @@ namespace Sudoku
             await UpdateGameGrid(gameData);
         }
 
-        protected async Task UpdateGameGrid(SudokuGrid gameData)
+        public async Task UpdateGameGrid(SudokuGrid gameData)
         {
             GameGrid.Children.Clear();
             for (var i = 0; i < gameData.Size; i++)
@@ -117,6 +93,18 @@ namespace Sudoku
                     Grid.SetRow(bg, ii);
                 }
             }
+        }
+
+        public async Task ConsoleWriteLine(string content)
+        {
+            ConsoleText.Text += content.Trim() + "\n";
+            ConsoleScroll.ScrollToEnd();
+            ConsoleScroll.ScrollToLeftEnd();
+        }
+
+        public async Task<string> GetAlgortihm()
+        {
+            return AlgorithmCBox.Text;
         }
     }
 }
