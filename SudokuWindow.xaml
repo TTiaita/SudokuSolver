@@ -1,0 +1,39 @@
+﻿<Window x:Class="Sudoku.SudokuWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Sudoku"
+        mc:Ignorable="d"
+        Title="Sudoku Solver" Height="450" Width="650">
+    <Grid Name="RootGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="Auto" MinWidth="200"/>
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="10" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="10" />
+        </Grid.RowDefinitions>
+        <ComboBox Name="AlgorithmCBox"  Grid.Column="1" Grid.Row="1" Margin="0,0,0,3" VerticalContentAlignment="Center">
+            <ComboBoxItem Content="WIP" IsSelected="True" />
+            <ComboBoxItem Content="NA" />
+        </ComboBox>
+        <Button Name="LoadBtn" Content="Load File" Grid.Column="1" Grid.Row="2" Click="LoadBtn_Click" Margin="0,3,0,3"/>
+        <Button Name="SolveBtn" Content="Solve" Grid.Column="1" Grid.Row="3" Margin="0,3,0,6"/>
+        <Border BorderBrush="Black" BorderThickness="1" Grid.Column="1" Grid.Row="4">
+            <ScrollViewer Name="ConsoleScroll" VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch" Background="Black">
+                <TextBlock Name="ConsoleText" FontFamily="Consolas" FontSize="10" Foreground="White"  VerticalAlignment="Top"/>
+            </ScrollViewer>
+        </Border>
+        
+        <Grid Name="GameGrid" Grid.Column="3" Grid.Row="1" Grid.RowSpan="4"></Grid>
+    </Grid>
+</Window>
