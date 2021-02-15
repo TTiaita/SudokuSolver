@@ -16,16 +16,15 @@ namespace Sudoku
 {
     public partial class SudokuWindow
     {
+        private static readonly int MinCellSize = 25;
+
         private async void LoadBtn_Click(object sender, RoutedEventArgs e) => await Controller.LoadSudokuFile();
 
         private async void SolveBtn_Click(object sender, RoutedEventArgs e) => await Controller.SolveSudoku();
 
-        private void ClearBtn_Click(object sender, RoutedEventArgs e)
-        {
-            ConsoleText.Text = string.Empty;
-        }
+        private void ClearBtn_Click(object sender, RoutedEventArgs e) => ConsoleText.Text = string.Empty;
 
-        public string AskForFile()
+        public string AskForFileLoad()
         {
             var diag = new OpenFileDialog
             {
@@ -34,6 +33,19 @@ namespace Sudoku
                 Filter = "Comma-Seperated Values (*.csv)|*.csv",
                 ReadOnlyChecked = true,
                 Title = "Open Sudoku file...",
+            };
+            diag.ShowDialog();
+            return diag.FileName;
+        }
+
+        public string AskForFileSave()
+        {
+            var diag = new SaveFileDialog()
+            {
+                CheckFileExists = true,
+                CheckPathExists = true,
+                Filter = "Text File (*.txt)|*.txt",
+                Title = "Save log file...",
             };
             diag.ShowDialog();
             return diag.FileName;
@@ -59,9 +71,12 @@ namespace Sudoku
             GameGrid.Children.Clear();
             for (var i = 0; i < gameData.Size; i++)
             {
+                var squareRow = (int)Math.Floor((decimal)i / gameData.SquareSize);
                 for (var ii = 0; ii < gameData.Size; ii++)
                 {
                     var startingValue = gameData.Start[i][ii] != 0;
+                    var squareId = gameData.SqrLookup[i][ii];
+                    Trace.Write(squareId + " ");
                     var border = new Border()
                     {
                         BorderThickness = new Thickness(1),
@@ -76,15 +91,27 @@ namespace Sudoku
                         Background = Brushes.Transparent,
                         Foreground = startingValue ? Brushes.Black : Brushes.Blue,
                         Margin = new Thickness(0),
-                        Padding = new Thickness(0)
+                        Padding = new Thickness(0),
                     };
                     border.Child = cell;
 
+                    Brush colour;
+                    if ((gameData.SquareSize % 2 == 0 && (squareRow % 2 != squareId % 2))
+                        || (gameData.SquareSize % 2 == 1 && squareId % 2 == 0))
+                    {
+                        colour = Brushes.LightGray;
+                    }
+                    else
+                    {
+                        colour = Brushes.WhiteSmoke;
+                    }
+
                     var bg = new Rectangle()
                     {
-                        Fill = gameData.SqrLookup[i][ii] % 2 == 0 ? Brushes.LightGray : Brushes.WhiteSmoke
+                        Fill = colour
                     };
 
+                    
                     GameGrid.Children.Add(bg);
                     GameGrid.Children.Add(border);
                     Grid.SetColumn(border, i);
@@ -92,6 +119,7 @@ namespace Sudoku
                     Grid.SetColumn(bg, i);
                     Grid.SetRow(bg, ii);
                 }
+                Trace.WriteLine("");
             }
         }
 

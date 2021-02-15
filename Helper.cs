@@ -13,5 +13,11 @@ namespace Sudoku
             var sqrt = Math.Sqrt(num);
             return Math.Abs(Math.Ceiling(sqrt) - Math.Floor(sqrt)) < Double.Epsilon;
         }
+
+        public static string MillisecondsToDesc(long ms)
+        {
+            TimeSpan ts = TimeSpan.FromMilliseconds(ms);
+            return string.Format("{0:D2}m {1:D2}s {2:D3}ms", (int)Math.Floor(ts.TotalMinutes), ts.Seconds, ts.Milliseconds);
+        }
     }
 }

@@ -11,16 +11,19 @@ namespace Sudoku
 {
     public static class Controller
     {
-        private static string consoleLog { get; set; }
         private static readonly SudokuWindow mainWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive) as SudokuWindow;
         private static SudokuGrid activeGrid;
 
         public static async Task LoadSudokuFile()
         {
-            var filepath = mainWindow.AskForFile();
+            var filepath = mainWindow.AskForFileLoad();
             _ = mainWindow.ConsoleWriteLine($"Loading \"{filepath}\"");
             activeGrid = new SudokuGrid(await CSVToArray(filepath));
-            await mainWindow.DrawGameGrid(activeGrid);
+            if (activeGrid != null)
+            {
+                await mainWindow.DrawGameGrid(activeGrid);
+            }
+            _ = mainWindow.ConsoleWriteLine("Loading complete.");
         }
 
         public static async Task SolveSudoku()
@@ -32,6 +35,20 @@ namespace Sudoku
             }
             var alg = await mainWindow.GetAlgortihm();
             await mainWindow.ConsoleWriteLine($"Preparing to solve using {alg} algrithm.");
+
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var success = await activeGrid.Solve();
+            stopwatch.Stop();
+
+            if (success)
+            {
+                await mainWindow.ConsoleWriteLine($"Solution found.\n\tElapsed Time: {Helper.MillisecondsToDesc(stopwatch.ElapsedMilliseconds)}");
+            }
+            else
+            {
+                await mainWindow.ConsoleWriteLine($"Failed to find a solution.\n\tElapsed Time: {Helper.MillisecondsToDesc(stopwatch.ElapsedMilliseconds)}");
+            }
         }
 
         public static async Task<int[][]> CSVToArray(string filepath)
@@ -42,6 +59,8 @@ namespace Sudoku
             if (!Helper.IsSquareNumber(length))
             {
                 // Can't load: Need to do something here
+                await mainWindow.ConsoleWriteLine("Invalid CSV file. Cannot create grid.");
+                return null;
             }
 
             var cols = new int[length][];
@@ -51,12 +70,14 @@ namespace Sudoku
                 var cells = rows[i].Split(',');
                 for (var ii = 0; ii < cells.Length; ii++)
                 {
-                    cols[i] ??= new int[length];
-                    cols[i][ii] = int.Parse(cells[ii].Trim());
+                    cols[ii] ??= new int[length];
+                    cols[ii][i] = int.Parse(cells[ii].Trim());
                 }
             }
 
             return cols;
         }
+
+        
     }
 }

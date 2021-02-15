@@ -16,6 +16,9 @@ namespace Sudoku
         public int Row { get; }
         public int Sqr { get; }
         public List<int> BlackList { get; private set; }
+        public bool HasStartingValue { get; }
+        public SudokuNode Parent { get; set; } = null;
+        public SudokuNode Child { get; set; } = null;
 
         public SudokuNode(int size, int value, int col, int row, int sqr)
         {
@@ -29,6 +32,7 @@ namespace Sudoku
             if (value != 0)
             {
                 ProposedValue = value;
+                HasStartingValue = true;
             }
         }
 

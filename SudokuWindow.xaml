@@ -9,7 +9,8 @@
     <Grid Name="RootGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="10" />
-            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="150"/>
             <ColumnDefinition Width="10" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="10" />
@@ -19,22 +20,28 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="10" />
         </Grid.RowDefinitions>
-        <ComboBox Name="AlgorithmCBox"  Grid.Column="1" Grid.Row="1" Margin="0,0,0,3" VerticalContentAlignment="Center">
-            <ComboBoxItem Content="Fail Fast" IsSelected="True" />
-            <ComboBoxItem Content="Risk Adverse" />
+        <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="3,0,0,3" Text="Algorithm:"/>
+        <ComboBox Name="AlgorithmCBox"  Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,3" VerticalContentAlignment="Center">
+            <ComboBoxItem Content="Brute force" IsSelected="True" />
+            <ComboBoxItem Content="Access-optimised brute force" />
+            <ComboBoxItem Content="Pessimistic depth-first" />
         </ComboBox>
-        <Button Name="LoadBtn" Content="Load File" Grid.Column="1" Grid.Row="2" Click="LoadBtn_Click" Margin="0,3,0,3"/>
-        <Button Name="SolveBtn" Content="Solve" Grid.Column="1" Grid.Row="3" Click="SolveBtn_Click" Margin="0,3,0,6"/>
-        <Border BorderBrush="Black" BorderThickness="1" Grid.Column="1" Grid.Row="4">
+        <Button Name="LoadBtn" Content="Load File" Grid.Column="1" Grid.Row="3" Click="LoadBtn_Click" Margin="0,3,0,3"/>
+        <Button Name="CheckBtn" Content="Check File" Grid.Column="2" Grid.Row="3" Margin="0,3,0,3"/>
+        <Button Name="SolveBtn" Content="Solve" Grid.Column="1" Grid.Row="4" Click="SolveBtn_Click" Margin="0,3,0,6"/>
+        <Button Name="PlaybackBtn" Content="Playback" Grid.Column="2" Grid.Row="4" Margin="0,3,0,6"/>
+        <Border BorderBrush="Black" BorderThickness="1" Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="2">
             <ScrollViewer Name="ConsoleScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch" Background="Black">
                 <TextBlock Name="ConsoleText" x:FieldModifier="public" FontFamily="Consolas" FontSize="10" Foreground="White"  VerticalAlignment="Top"/>
             </ScrollViewer>
         </Border>
-        <Button Name="ClearBtn" Content="Clear Log" Grid.Column="1" Grid.Row="5" Click="ClearBtn_Click"/>
-        <Grid Name="GameGrid" Grid.Column="3" Grid.Row="1" Grid.RowSpan="4"></Grid>
+        <Button Name="ClearBtn" Content="Clear" Grid.Column="1" Grid.Row="6" Click="ClearBtn_Click"/>
+        <Button Name="SaveBtn" Content="Save" Grid.Column="2" Grid.Row="6" />
+        <Grid Name="GameGrid" Grid.Column="4" Grid.Row="1" Grid.RowSpan="5"></Grid>
     </Grid>
 </Window>
