@@ -3,6 +3,7 @@
     /// <summary>Interface representing a single node in the sudoku grid</summary>
     public interface INode
     {
+        public bool Starting { get; set; }
         public int Value { get; set; }
         /// <summary>Row Number</summary>
         public int X { get; set; }

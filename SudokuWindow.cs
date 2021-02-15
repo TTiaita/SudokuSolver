@@ -16,8 +16,6 @@ namespace Sudoku
 {
     public partial class SudokuWindow
     {
-        private static readonly int MinCellSize = 25;
-
         private async void LoadBtn_Click(object sender, RoutedEventArgs e) => await Controller.LoadSudokuFile();
 
         private async void SolveBtn_Click(object sender, RoutedEventArgs e) => await Controller.SolveSudoku();
@@ -51,13 +49,13 @@ namespace Sudoku
             return diag.FileName;
         }
 
-        public async Task DrawGameGrid(SudokuGrid gameData)
+        public async Task DrawGameGrid(Solvers.Node[][] gameData)
         {
             GameGrid.Children.Clear();
             GameGrid.ColumnDefinitions.Clear();
             GameGrid.RowDefinitions.Clear();
 
-            for (var i = 0; i < gameData.Size; i++)
+            for (var i = 0; i < gameData.Length; i++)
             {
                 GameGrid.ColumnDefinitions.Add(new ColumnDefinition());
                 GameGrid.RowDefinitions.Add(new RowDefinition());
@@ -66,17 +64,20 @@ namespace Sudoku
             await UpdateGameGrid(gameData);
         }
 
-        public async Task UpdateGameGrid(SudokuGrid gameData)
+        public async Task UpdateGameGrid(Solvers.Node[][] gameData)
         {
+            var size = gameData.Length;
+            var squareSize = (int)Math.Sqrt(size);
             GameGrid.Children.Clear();
-            for (var i = 0; i < gameData.Size; i++)
+            Trace.WriteLine("\nDraw");
+            for (var y = 0; y < size; y++)
             {
-                var squareRow = (int)Math.Floor((decimal)i / gameData.SquareSize);
-                for (var ii = 0; ii < gameData.Size; ii++)
+                var squareRow = (int)Math.Floor((decimal)y / squareSize);
+                for (var x = 0; x < size; x++)
                 {
-                    var startingValue = gameData.Start[i][ii] != 0;
-                    var squareId = gameData.SqrLookup[i][ii];
-                    Trace.Write(squareId + " ");
+                    var node = gameData[x][y];
+                    Trace.Write(node.Value + " ");
+                    var squareId = node.Z;
                     var border = new Border()
                     {
                         BorderThickness = new Thickness(1),
@@ -86,18 +87,18 @@ namespace Sudoku
                     {
                         TextAlignment = TextAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
-                        Text = gameData.Nodes[i][ii].ProposedValue > 0 ? gameData.Nodes[i][ii].ProposedValue.ToString() : " ",
+                        Text = node.Value == 0 ? " " : node.Value.ToString(),
                         FontSize = 20,
                         Background = Brushes.Transparent,
-                        Foreground = startingValue ? Brushes.Black : Brushes.Blue,
+                        Foreground = node.Starting ? Brushes.Black : Brushes.DarkGreen,
                         Margin = new Thickness(0),
                         Padding = new Thickness(0),
                     };
                     border.Child = cell;
 
                     Brush colour;
-                    if ((gameData.SquareSize % 2 == 0 && (squareRow % 2 != squareId % 2))
-                        || (gameData.SquareSize % 2 == 1 && squareId % 2 == 0))
+                    if ((squareSize % 2 == 0 && (squareRow % 2 != squareId % 2))
+                        || (squareSize % 2 == 1 && squareId % 2 == 0))
                     {
                         colour = Brushes.LightGray;
                     }
@@ -111,13 +112,13 @@ namespace Sudoku
                         Fill = colour
                     };
 
-                    
+
                     GameGrid.Children.Add(bg);
                     GameGrid.Children.Add(border);
-                    Grid.SetColumn(border, i);
-                    Grid.SetRow(border, ii);
-                    Grid.SetColumn(bg, i);
-                    Grid.SetRow(bg, ii);
+                    Grid.SetColumn(border, x);
+                    Grid.SetRow(border, y);
+                    Grid.SetColumn(bg, x);
+                    Grid.SetRow(bg, y);
                 }
                 Trace.WriteLine("");
             }

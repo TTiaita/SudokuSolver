@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Sudoku.Interfaces;
+using System.Collections.Generic;
 
-namespace Sudoku.Interfaces
+namespace Sudoku.Solvers
 {
-    /// <summary>Interface representing solution to the sudoku grid.</summary>
-    public interface ISolution
+    public class Solution : ISolution
     {
         public bool Solved { get; set; }
         public Queue<IPlaybackStep> Playback { get; set; }
