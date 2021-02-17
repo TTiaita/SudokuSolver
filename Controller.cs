@@ -1,6 +1,7 @@
 ﻿using Sudoku.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -14,57 +15,78 @@ namespace Sudoku
 {
     public static class Controller
     {
-        private static readonly SudokuWindow mainWindow = Application.Current.Windows.OfType<Window>().SingleOrDefault(x => x.IsActive) as SudokuWindow;
+        public static SudokuWindow MainWindow { get; set; }        
+        public static event PropertyChangedEventHandler StaticPropertyChanged;
+
+        private static string logText = string.Empty;
+        public static string LogText
+        {
+            get { return logText; }
+            set
+            {
+                logText = value;
+                OnStaticPropertyChanged("LogText");
+            }
+        }
+
+        private static void OnStaticPropertyChanged(string propertyName)
+        {
+            StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs(propertyName));
+        }
+
         private static Solvers.Node[][] nodeGrid;
         private static int[][] rawGrid;
 
-        public static async Task LoadSudokuFile()
+        public static async Task LoadSudokuFile(string filepath)
         {
-            var filepath = mainWindow.AskForFileLoad();
             if (string.IsNullOrEmpty(filepath))
             {
                 // User cancelled dialog
                 return;
             }
-            _ = mainWindow.ConsoleWriteLine($"Loading \"{filepath}\"");
-            rawGrid = await CSVToArray(filepath);
-            nodeGrid = await Solvers.Node.FromIntArrayAsync(rawGrid);
 
-            //*
-            Trace.WriteLine("\nNode.Value");
-            for (var y = 0; y < nodeGrid.Length; y++)
+            await Task.Run(async () =>
             {
-                for (var x = 0; x < nodeGrid.Length; x++)
-                {
-                    Trace.Write(nodeGrid[x][y].Value + " ");
-                }
-                Trace.WriteLine("");
-            }
+                LogMessage($"Loading \"{filepath}\"");
+                rawGrid = await CSVToArray(filepath);
+                nodeGrid = await Solvers.Node.FromIntArrayAsync(rawGrid);
 
-            Trace.WriteLine("\nNode.Square");
-            for (var y = 0; y < nodeGrid.Length; y++)
+                for (var y = 0; y < nodeGrid.Length; y++)
+                {
+                    for (var x = 0; x < nodeGrid.Length; x++)
+                    {
+                        Trace.Write(nodeGrid[x][y].Value + " ");
+                    }
+                    Trace.WriteLine("");
+                }
+
+                Trace.WriteLine("\nNode.Square");
+                for (var y = 0; y < nodeGrid.Length; y++)
+                {
+                    for (var x = 0; x < nodeGrid.Length; x++)
+                    {
+                        Trace.Write(nodeGrid[x][y].Z + " ");
+                    }
+                    Trace.WriteLine("");
+                }
+            });
+
+            Application.Current.Dispatcher.Invoke(new Action(async () =>
             {
-                for (var x = 0; x < nodeGrid.Length; x++)
-                {
-                    Trace.Write(nodeGrid[x][y].Z + " ");
-                }
-                Trace.WriteLine("");
-            }
-            //*/
-
-            await mainWindow.DrawGameGrid(nodeGrid);
-            _ = mainWindow.ConsoleWriteLine("Loading complete.");
+                await MainWindow.CreateGameGrid(nodeGrid);
+                LogMessage("Loading complete.");
+            }));
         }
 
         public static async Task SolveSudoku(bool enablePlayback)
         {
             if (nodeGrid == null)
             {
-                await mainWindow.ConsoleWriteLine("Sudoku grid must be loaded before solving.");
+                LogMessage("Sudoku grid must be loaded before solving.");
                 return;
             }
 
-            var alg = await mainWindow.GetAlgortihm();
+            var alg = await MainWindow.GetAlgortihm();
             ISolver solver = alg switch
             {
                 "Brute force" => new Solvers.BruteForce(),
@@ -74,7 +96,7 @@ namespace Sudoku
                 _ => throw new ArgumentOutOfRangeException("Specified algorithm could not be found."),
             };
 
-            await mainWindow.ConsoleWriteLine($"Preparing to solve using {alg} algrithm.");
+            LogMessage($"Preparing to solve using {alg} algrithm.");
             await Task.Run(async () =>
             {
                 await solver.Init(nodeGrid);
@@ -84,17 +106,17 @@ namespace Sudoku
                 Application.Current.Dispatcher.Invoke(new Action(async () => {
                     if (solution.Solved)
                     {
-                        await mainWindow.ConsoleWriteLine($"Solution found.{timerString}");
-                        await mainWindow.UpdateGameGrid(solution.Grid);
+                        LogMessage($"Solution found.{timerString}");
+                        await MainWindow.UpdateGameGrid(solution.Grid);
                     }
                     else
                     {
-                        await mainWindow.ConsoleWriteLine($"Failed to find a solution.{timerString}");
+                        LogMessage($"Failed to find a solution.{timerString}");
                     }
 
                     if (enablePlayback)
                     {
-                    await mainWindow.Playback(solution.Playback);
+                    await MainWindow.Playback(solution.Playback);
                     }
                 }));
             });
@@ -108,7 +130,7 @@ namespace Sudoku
             if (!Helper.IsSquareNumber(length))
             {
                 // Can't load: Need to do something here
-                await mainWindow.ConsoleWriteLine("Invalid CSV file. Cannot create grid.");
+                LogMessage("Invalid CSV file. Cannot create grid.");
                 return null;
             }
 
@@ -132,6 +154,34 @@ namespace Sudoku
             return cols;
         }
 
-        
+        public static void LogMessage(string msg)
+        {
+            LogText += $"{msg}\n";
+            Application.Current.Dispatcher.Invoke(new Action(async () =>
+            {
+                await MainWindow.ConsoleScrollToBottom();
+            }));
+        }
+
+        public static async Task ClearLog()
+        {
+            LogText = string.Empty;
+        }
+
+        public static async Task SaveLog(string filepath)
+        {
+            // User cancelled
+            if (string.IsNullOrEmpty(filepath))
+            {
+                return;
+            }
+
+            // Write file
+            await Task.Run(async () =>
+            {
+                using var file = new StreamWriter(filepath);
+                await file.WriteAsync(LogText);
+            });
+        }
     }
 }

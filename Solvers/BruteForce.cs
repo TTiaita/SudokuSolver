@@ -125,7 +125,6 @@ namespace Sudoku.Solvers
                     boxData.Add(data[i][ii].Value);
                     str += data[i][ii].Value + " ";
                 }
-                Trace.WriteLine($"x:{x} y:{y} z:{z} {str}");
             }
             return boxData;
         }

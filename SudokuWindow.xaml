@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Sudoku"
         mc:Ignorable="d"
-        Title="Sudoku Solver" Height="450" Width="750">
+        Title="Sudoku Solver" Height="450" Width="750" Loaded="Window_Loaded"
+        >
     <Grid Name="RootGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="10" />
@@ -38,11 +39,14 @@
         <Button Name="PlaybackBtn" Content="Playback" Grid.Column="2" Grid.Row="4" Click="PlaybackBtn_Click" Margin="0,3,0,6"/>
         <Border BorderBrush="Black" BorderThickness="1" Grid.Column="1" Grid.Row="5" Grid.ColumnSpan="2">
             <ScrollViewer Name="ConsoleScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch" Background="Black">
-                <TextBlock Name="ConsoleText" x:FieldModifier="public" FontFamily="Consolas" FontSize="10" Foreground="White"  VerticalAlignment="Top"/>
+                <TextBlock Name="ConsoleText" Text="{Binding Path=(local:Controller.LogText)}" FontFamily="Consolas" FontSize="10" Foreground="White"  VerticalAlignment="Top" />
             </ScrollViewer>
         </Border>
         <Button Name="ClearBtn" Content="Clear" Grid.Column="1" Grid.Row="6" Click="ClearBtn_Click"/>
-        <Button Name="SaveBtn" Content="Save" Grid.Column="2" Grid.Row="6" />
-        <Grid Name="GameGrid" Grid.Column="4" Grid.Row="1" Grid.RowSpan="5"></Grid>
+        <Button Name="SaveBtn" Content="Save" Grid.Column="2" Grid.Row="6" Click="SaveBtn_Click"/>
+        <ScrollViewer Grid.Column="4" Grid.Row="0" Grid.RowSpan="8" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible">
+            <Grid Name="GameGrid" Margin="10,10,10,10"></Grid>
+        </ScrollViewer>
+        
     </Grid>
 </Window>
