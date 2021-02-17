@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Sudoku.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,7 +20,38 @@ namespace Sudoku
     {
         private async void LoadBtn_Click(object sender, RoutedEventArgs e) => await Controller.LoadSudokuFile();
 
-        private async void SolveBtn_Click(object sender, RoutedEventArgs e) => await Controller.SolveSudoku();
+        private async void SolveBtn_Click(object sender, RoutedEventArgs e)
+        {
+            //*
+            DisableUI();
+            try
+            {
+                await Controller.SolveSudoku(false);
+            }
+            catch (Exception ex)
+            {
+                await ConsoleWriteLine($"{ex.GetType()} occurred.\n\t{ex.Message}");
+            }
+            finally 
+            {
+                EnableUI();
+            }
+            //*/
+            await ConsoleWriteLine("Test done");
+        }
+
+        private async void PlaybackBtn_Click(object sender, RoutedEventArgs e) => await Controller.SolveSudoku(true);
+
+        private async Task TestAsync()
+        {
+            //await Task.Run(() =>
+            //{
+                for (var i = 0; i < 10000; i++)
+                {
+                    Trace.WriteLine(i);
+                }
+            //});
+        }
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e) => ConsoleText.Text = string.Empty;
 
@@ -91,6 +124,7 @@ namespace Sudoku
                         FontSize = 20,
                         Background = Brushes.Transparent,
                         Foreground = node.Starting ? Brushes.Black : Brushes.DarkGreen,
+                        TextDecorations = node.Starting ? TextDecorations.Underline : null,
                         Margin = new Thickness(0),
                         Padding = new Thickness(0),
                     };
@@ -134,6 +168,33 @@ namespace Sudoku
         public async Task<string> GetAlgortihm()
         {
             return AlgorithmCBox.Text;
+        }
+
+        private void DisableUI()
+        {
+            AlgorithmCBox.IsEnabled = false;
+            LoadBtn.IsEnabled = false;
+            CheckBtn.IsEnabled = false;
+            SolveBtn.IsEnabled = false;
+            PlaybackBtn.IsEnabled = false;
+            ClearBtn.IsEnabled = false;
+            SaveBtn.IsEnabled = false;
+        }
+
+        private void EnableUI()
+        {
+            AlgorithmCBox.IsEnabled = true;
+            LoadBtn.IsEnabled = true;
+            CheckBtn.IsEnabled = true;
+            SolveBtn.IsEnabled = true;
+            PlaybackBtn.IsEnabled = true;
+            ClearBtn.IsEnabled = true;
+            SaveBtn.IsEnabled = true;
+        }
+
+        public async Task Playback(Queue<IPlaybackStep> playback)
+        {
+            throw new NotImplementedException();
         }
     }
 }

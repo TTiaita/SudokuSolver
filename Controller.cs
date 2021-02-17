@@ -5,8 +5,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Sudoku
 {
@@ -54,13 +56,14 @@ namespace Sudoku
             _ = mainWindow.ConsoleWriteLine("Loading complete.");
         }
 
-        public static async Task SolveSudoku()
+        public static async Task SolveSudoku(bool enablePlayback)
         {
             if (nodeGrid == null)
             {
                 await mainWindow.ConsoleWriteLine("Sudoku grid must be loaded before solving.");
                 return;
             }
+
             var alg = await mainWindow.GetAlgortihm();
             ISolver solver = alg switch
             {
@@ -72,20 +75,29 @@ namespace Sudoku
             };
 
             await mainWindow.ConsoleWriteLine($"Preparing to solve using {alg} algrithm.");
-
-            await solver.Init(nodeGrid);
-            var solution = await solver.Solve(false);
-            var timerString = $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}\n\tSolve Time: { Helper.MillisecondsToDesc(solution.TimeToSolve)}\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
-
-            if (solution.Solved)
+            await Task.Run(async () =>
             {
-                await mainWindow.ConsoleWriteLine($"Solution found.{timerString}");
-                await mainWindow.UpdateGameGrid(solution.Grid);
-            }
-            else
-            {
-                await mainWindow.ConsoleWriteLine($"Failed to find a solution.{timerString}");
-            }
+                await solver.Init(nodeGrid);
+                var solution = await solver.Solve(enablePlayback);
+                var timerString = $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}\n\tSolve Time: { Helper.MillisecondsToDesc(solution.TimeToSolve)}\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
+
+                Application.Current.Dispatcher.Invoke(new Action(async () => {
+                    if (solution.Solved)
+                    {
+                        await mainWindow.ConsoleWriteLine($"Solution found.{timerString}");
+                        await mainWindow.UpdateGameGrid(solution.Grid);
+                    }
+                    else
+                    {
+                        await mainWindow.ConsoleWriteLine($"Failed to find a solution.{timerString}");
+                    }
+
+                    if (enablePlayback)
+                    {
+                    await mainWindow.Playback(solution.Playback);
+                    }
+                }));
+            });
         }
 
         public static async Task<int[][]> CSVToArray(string filepath)

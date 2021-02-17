@@ -12,6 +12,7 @@ namespace Sudoku.Solvers
     {
         protected Node[][] data;
         protected int size;
+        protected int square;
 
         protected Stopwatch timerInit;
         protected Stopwatch timerSolve;
@@ -33,6 +34,7 @@ namespace Sudoku.Solvers
             timerInit.Start();
 
             size = rawGrid.Length;
+            square = (int)Math.Sqrt(size);
             data = new Node[size][];
             for (var  i = 0; i < size; i++)
             {
@@ -57,17 +59,17 @@ namespace Sudoku.Solvers
         {
             if (!Ready)
             {
-                throw new InvalidOperationException("");
+                throw new InvalidOperationException("Solve() cannot be called befgore Init().");
             }
             timerSolve.Start();
 
-            var solvedGrid = RecursiveSolve(0, 0, enablePlayback);
+            var solvedGrid = await RecursiveSolve(0, 0, enablePlayback);
 
             timerSolve.Stop();
             return new Solution()
             {
-                Solved = solvedGrid != null,
-                Grid = solvedGrid,
+                Solved = solvedGrid,
+                Grid = data,
                 Playback = null,
                 TimeToInit = timerInit.ElapsedMilliseconds,
                 TimeToSolve = timerSolve.ElapsedMilliseconds,
@@ -75,50 +77,55 @@ namespace Sudoku.Solvers
             };
         }
 
-        protected Node[][] RecursiveSolve(int x, int y, bool enablePlayback)
+        protected async Task<bool> RecursiveSolve(int x, int y, bool enablePlayback)
         {
             if (y == size)
             {
-                return data;
+                return true;
             }
             var cell = data[x][y];
             var nextX = (x + 1) % size;
             var nextY = (x == size - 1) ? y + 1 : y;
-            if (!cell.Starting)
+
+            var row = GetRowData(y);
+            var col = GetColData(x);
+            var box = GetBoxData(x, y);
+
+            if (cell.Value != 0 || cell.Starting)
             {
-                for (var proposed = 1; proposed <= size; proposed++)
+                return await RecursiveSolve(nextX, nextY, enablePlayback);
+            }
+
+            for (var i = 1; i <= size; i++)
+            {
+                if (!(row.Contains(i) || col.Contains(i) || box.Contains(i)))
                 {
-                    if (!(GetRowData(x).Contains(proposed) || GetColData(y).Contains(proposed) || GetBoxData(x,y).Contains(proposed)))
+                    cell.Value = i;
+                    if (await RecursiveSolve(nextX, nextY, enablePlayback))
                     {
-                        cell.Value = proposed;
-                        var next = RecursiveSolve(nextX, nextY, enablePlayback);
-                        if (next != null)
-                        {
-                            return next;
-                        }
+                        return true;
                     }
-                    continue;
                 }
-                return null;
+                cell.Value = 0;
             }
-            else
-            {
-                return RecursiveSolve(nextX, nextY, enablePlayback);
-            }
+            return false;
         }
 
         protected List<int> GetBoxData(int x, int y)
         {
-            var z = GetBoxId(x, y);
-            var startX = (int)(Math.Floor(z / (decimal)size));
-            var startY = z * size;
+            var z = data[x][y].Z;
+            var startX = (z * square) % size;
+            var startY = (int)Math.Floor(z / (decimal)square) * square;
             var boxData = new List<int>();
-            for (var i = startX; i < startX + size; i++)
+            for (var ii = startY; ii < startY + square; ii++)
             {
-                for (var ii = startY; ii < startY + size; ii++)
+                var str = string.Empty;
+                for (var i = startX; i < startX + square; i++)
                 {
-                    boxData.Add(data[x][y].Value);
+                    boxData.Add(data[i][ii].Value);
+                    str += data[i][ii].Value + " ";
                 }
+                Trace.WriteLine($"x:{x} y:{y} z:{z} {str}");
             }
             return boxData;
         }
@@ -128,7 +135,7 @@ namespace Sudoku.Solvers
             var rowData = new List<int>();
             for (var i = 0; i < size; i++)
             {
-                rowData.Add(data[y][i].Value);
+                rowData.Add(data[i][y].Value);
             }
             return rowData;
         }
@@ -138,14 +145,9 @@ namespace Sudoku.Solvers
             var colData = new List<int>();
             for (var i = 0; i < size; i++)
             {
-                colData.Add(data[i][x].Value);
+                colData.Add(data[x][i].Value);
             }
             return colData;
-        }
-
-        protected int GetBoxId(int x, int y)
-        {
-            return (int)(Math.Floor(x / (decimal)size) * size + Math.Floor(y / (decimal)size));
         }
     }
 }
