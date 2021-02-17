@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 
 namespace Sudoku.Solvers
 {
-    public class PessimisticDepthFirst : ISolver
+    internal class AsynchronousSubdivision : ISolver
     {
         public bool Ready { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
-        public Task Init(Node[][] rawGrid)
+        public Task Init(INode[][] rawGrid)
         {
             throw new System.NotImplementedException();
         }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Sudoku.Solvers
 {
-    public class Node : INode
+    public class BasicNode : INode
     {
         public bool Starting { get; set; }
         public int Value { get; set; }
@@ -16,11 +16,11 @@ namespace Sudoku.Solvers
         public int Y { get; set; }
         public int Z { get; set; }
 
-        public static async Task<Node[][]> FromIntArrayAsync(int[][] data)
+        public static async Task<BasicNode[][]> FromIntArrayAsync(int[][] data)
         {
             var size = data.Length;
             var squareSize = (int)Math.Sqrt(size);
-            var output = new Node[size][];
+            var output = new BasicNode[size][];
 
             Trace.WriteLine("\nFromIntArrayAsync");
             for (var y = 0; y < size; y++)
@@ -29,8 +29,8 @@ namespace Sudoku.Solvers
                 {
                     Trace.Write(data[x][y] + " ");
                     //*
-                    output[x] ??= new Node[size];
-                    output[x][y] = new Node() 
+                    output[x] ??= new BasicNode[size];
+                    output[x][y] = new BasicNode() 
                     { 
                         Starting = data[x][y] != 0,
                         Value = data[x][y],

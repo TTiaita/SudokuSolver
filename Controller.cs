@@ -34,7 +34,7 @@ namespace Sudoku
             StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs(propertyName));
         }
 
-        private static Solvers.Node[][] nodeGrid;
+        private static INode[][] nodeGrid;
         private static int[][] rawGrid;
 
         public static async Task LoadSudokuFile(string filepath)
@@ -49,7 +49,7 @@ namespace Sudoku
             {
                 LogMessage($"Loading \"{filepath}\"");
                 rawGrid = await CSVToArray(filepath);
-                nodeGrid = await Solvers.Node.FromIntArrayAsync(rawGrid);
+                nodeGrid = await Solvers.BasicNode.FromIntArrayAsync(rawGrid);
 
                 for (var y = 0; y < nodeGrid.Length; y++)
                 {
@@ -90,13 +90,13 @@ namespace Sudoku
             ISolver solver = alg switch
             {
                 "Brute force" => new Solvers.BruteForce(),
-                "Optimised brute force" => new Solvers.OptimistedBruteForce(),
+                "Optimised brute force" => new Solvers.OptimisedBruteForce(),
                 "Pessimistic depth-first" => new Solvers.PessimisticDepthFirst(),
                 "Asynchronous subdivision" => new Solvers.AsynchronousSubdivision(),
                 _ => throw new ArgumentOutOfRangeException("Specified algorithm could not be found."),
             };
 
-            LogMessage($"Preparing to solve using {alg} algrithm.");
+            LogMessage($"Solving with '{alg}' algrithm.");
             await Task.Run(async () =>
             {
                 await solver.Init(nodeGrid);

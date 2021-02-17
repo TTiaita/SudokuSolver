@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sudoku.Interfaces;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,6 @@ namespace Sudoku
             return string.Format("{0:D2}m {1:D2}s {2:D3}ms", (int)Math.Floor(ts.TotalMinutes), ts.Seconds, ts.Milliseconds);
         }
 
-        public static bool IsValidSudoku(Solvers.Node[][] data) => IsSquareNumber(data.Length) || data.All(a => a.Length == data.Length);
+        public static bool IsValidSudoku(INode[][] data) => IsSquareNumber(data.Length) || data.All(a => a.Length == data.Length);
     }
 }

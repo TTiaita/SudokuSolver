@@ -8,7 +8,7 @@ namespace Sudoku.Interfaces
     {
         public bool Ready { get; set; }
 
-        public Task Init(Solvers.Node[][] rawGrid);
+        public Task Init(INode[][] rawGrid);
         public Task<ISolution> Solve(bool enablePlayback);
     }
 }

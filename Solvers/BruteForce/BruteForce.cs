@@ -10,7 +10,7 @@ namespace Sudoku.Solvers
 {
     public class BruteForce : ISolver
     {
-        protected Node[][] data;
+        protected BasicNode[][] data;
         protected int size;
         protected int square;
 
@@ -25,7 +25,7 @@ namespace Sudoku.Solvers
             timerSolve = new Stopwatch();
         }
 
-        public async Task Init(Node[][] rawGrid)
+        public async Task Init(INode[][] rawGrid)
         {
             if (!Helper.IsValidSudoku(rawGrid))
             {
@@ -35,13 +35,13 @@ namespace Sudoku.Solvers
 
             size = rawGrid.Length;
             square = (int)Math.Sqrt(size);
-            data = new Node[size][];
+            data = new BasicNode[size][];
             for (var  i = 0; i < size; i++)
             {
-                data[i] = new Node[size];
+                data[i] = new BasicNode[size];
                 for (var ii = 0; ii < size; ii++)
                 {
-                    data[i][ii] = new Node() {
+                    data[i][ii] = new BasicNode() {
                         Value = rawGrid[i][ii].Value,
                         Starting = rawGrid[i][ii].Starting,
                         X = rawGrid[i][ii].X,

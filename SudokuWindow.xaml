@@ -28,8 +28,8 @@
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="3,0,0,3" Text="Algorithm:"/>
         <ComboBox Name="AlgorithmCBox"  Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,3" VerticalContentAlignment="Center">
-            <ComboBoxItem Content="Brute force" IsSelected="True" />
-            <ComboBoxItem Content="Optimised brute force" />
+            <ComboBoxItem Content="Brute force" />
+            <ComboBoxItem Content="Optimised brute force"  IsSelected="True"/>
             <ComboBoxItem Content="Pessimistic depth-first" />
             <ComboBoxItem Content="Asynchronous subdivision" />
         </ComboBox>

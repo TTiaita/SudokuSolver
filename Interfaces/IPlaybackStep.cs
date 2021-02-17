@@ -5,13 +5,13 @@ namespace Sudoku.Interfaces
     /// <summary>Interface representing one frame in the playback of a solution.</summary>
     public interface IPlaybackStep
     {
-        public enum PlaybackAction { Add, Remove };
+        public enum PlaybackAction { Add, Try, Remove };
 
-        public Brush TextColour { get; set; }
-        public Brush BackgroundColour { get; set; }
+        public Brush TextColour { get; }
+        public Brush BackgroundColour { get; }
         public int Value { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public PlaybackAction Action { get; set; }
+        public PlaybackAction ActionType { get; set; }
     }
 }
