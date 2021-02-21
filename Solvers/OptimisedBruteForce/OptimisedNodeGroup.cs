@@ -11,6 +11,7 @@ namespace Sudoku.Solvers
         public int Size { get; set; }
         public List<OptimisedNode> Nodes { get; set; }
         public bool[] AllowedValues { get; set; }
+        public int Id { get; set; }
         private bool[] mutable;
 
         public OptimisedNodeGroup(int size)

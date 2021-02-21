@@ -15,15 +15,48 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Sudoku
 {
     public partial class SudokuWindow
     {
         private static bool gridActive = false;
+        private INode[][] gameData;
         private static TextBlock[][] gridCells;
         private static int gridSize;
         private static int squareSize;
+
+        private DispatcherTimer frameTick;
+        public Queue<IPlaybackStep> PlaybackData { get; set; }
+        private IPlaybackStep prevStep;
+
+        public SudokuWindow()
+        {
+            InitializeComponent();
+            frameTick = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            frameTick.Tick += FrameTick_Tick;
+
+            DisableUI();
+            EnableUI();
+        }
+
+        private async void FrameTick_Tick(object sender, EventArgs e)
+        {
+            if (PlaybackData != null && PlaybackData.Count > 0)
+            {
+                await UpdateGameGrid(PlaybackData.Dequeue());
+            }
+            else
+            {
+                PlaybackData = null;
+                frameTick.Stop();
+                EnableUI();
+            }
+        }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -53,6 +86,7 @@ namespace Sudoku
             DisableUI();
             try
             {
+                await ClearGameGrid();
                 await Controller.SolveSudoku(false);
             }
             catch (Exception ex)
@@ -70,14 +104,15 @@ namespace Sudoku
             DisableUI();
             try
             {
+                await ClearGameGrid();
                 await Controller.SolveSudoku(true);
+                StopBtn.IsEnabled = true;
+                frameTick.Start();
+
             }
             catch (Exception ex)
             {
                 Controller.LogMessage($"{ex.GetType()} occurred.\n\t{ex.Message}");
-            }
-            finally
-            {
                 EnableUI();
             }
         }
@@ -100,6 +135,17 @@ namespace Sudoku
             {
                 EnableUI();
             }
+        }
+
+        private async void StopBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (frameTick.IsEnabled)
+            {
+                frameTick.Stop();
+            }
+            await ClearGameGrid();
+            EnableUI();
+            StopBtn.IsEnabled = false;
         }
 
         public string AskForFileLoad()
@@ -128,14 +174,38 @@ namespace Sudoku
             return diag.FileName;
         }
 
-        public async Task CreateGameGrid(INode[][] gameData)
+        public async Task CreateGameGrid(INode[][] newData)
         {
-            if (!gridActive || gameData.Length != gridCells.Length)
+            var size = newData.Length;
+            if (!gridActive || size != gridCells.Length)
             {
                 gridActive = false;
-                await SetupGameGrid(gameData.Length);
+                await SetupGameGrid(size);
             }
-            await UpdateGameGrid(gameData);
+            gameData = newData;
+            await UpdateGameGrid();
+        }
+
+        private async Task ClearGameGrid()
+        {
+            if (gridActive)
+            {
+                // Updates cell contents.
+                for (var y = 0; y < gridSize; y++)
+                {
+                    for (var x = 0; x < gridSize; x++)
+                    {
+                        var node = gameData[x][y];
+                        var cell = gridCells[x][y];
+                        node.Value = node.Starting ? node.Value : 0;
+
+                        cell.Text = node.Value == 0 ? " " : node.Value.ToString();
+                        cell.Foreground = node.Starting ? Brushes.Black : Brushes.DarkGreen;
+                        cell.TextDecorations = node.Starting ? TextDecorations.Underline : null;
+                        SetCellBackground(node);
+                    }
+                }
+            }
         }
 
         private async Task SetupGameGrid(int size)
@@ -230,7 +300,7 @@ namespace Sudoku
             gridActive = true;
         }
 
-        public async Task UpdateGameGrid(INode[][] gameData)
+        public async Task UpdateGameGrid()
         {
             if (!gridActive)
             {
@@ -251,6 +321,39 @@ namespace Sudoku
             }
         }
 
+        public async Task UpdateGameGrid(INode[][] data)
+        {
+            gameData = data;
+            await UpdateGameGrid();
+        }
+
+        public async Task UpdateGameGrid(IPlaybackStep step)
+        {
+            if (!gridActive)
+            {
+                throw new InvalidOperationException("Cannot call UpdateGameGrid() before SetupGameGrid().");
+            }
+
+            var node = gameData[step.X][step.Y];
+            var cell = gridCells[step.X][step.Y];
+
+            node.Value = step.Value;
+            cell.Parent.SetValue(BackgroundProperty, step.BackgroundColour);
+            cell.Text = node.Value == 0 ? " " : node.Value.ToString();
+            cell.Foreground = step.TextColour;
+
+            if (prevStep != null && (step.X != prevStep.X || step.Y != prevStep.Y))
+            {
+                node = gameData[prevStep.X][prevStep.Y];
+                cell = gridCells[prevStep.X][prevStep.Y];
+
+                cell.Foreground = node.Starting ? Brushes.Black : Brushes.DarkGreen;
+                cell.TextDecorations = node.Starting ? TextDecorations.Underline : null;
+                SetCellBackground(node);
+            }
+            prevStep = step;
+        }
+
         public async Task ConsoleScrollToBottom()
         {
             ConsoleScroll.ScrollToEnd();
@@ -266,7 +369,10 @@ namespace Sudoku
         {
             AlgorithmCBox.IsEnabled = false;
             LoadBtn.IsEnabled = false;
-            CheckBtn.IsEnabled = false;
+            if (!frameTick.IsEnabled)
+            {
+                StopBtn.IsEnabled = false;
+            }
             SolveBtn.IsEnabled = false;
             PlaybackBtn.IsEnabled = false;
             ClearBtn.IsEnabled = false;
@@ -277,16 +383,32 @@ namespace Sudoku
         {
             AlgorithmCBox.IsEnabled = true;
             LoadBtn.IsEnabled = true;
-            CheckBtn.IsEnabled = true;
-            SolveBtn.IsEnabled = true;
-            PlaybackBtn.IsEnabled = true;
+            if (frameTick.IsEnabled)
+            {
+                StopBtn.IsEnabled = true;
+            }
+            if (gridActive)
+            {
+                SolveBtn.IsEnabled = true;
+                PlaybackBtn.IsEnabled = true;
+            }
             ClearBtn.IsEnabled = true;
             SaveBtn.IsEnabled = true;
         }
 
-        public async Task Playback(Queue<IPlaybackStep> playback)
+        private void SetCellBackground(INode node)
         {
-            throw new NotImplementedException();
+            Brush colour;
+            if ((squareSize % 2 == 0 && (node.Z / squareSize % 2 != node.Z % 2)) || (squareSize % 2 == 1 && node.Z % 2 == 0))
+            {
+                colour = Brushes.LightGray;
+            }
+            else
+            {
+                colour = Brushes.WhiteSmoke;
+            }
+            gridCells[node.X][node.Y].Parent.SetValue(BackgroundProperty, colour);
         }
+
     }
 }

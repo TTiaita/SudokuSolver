@@ -15,7 +15,7 @@ namespace Sudoku
 {
     public static class Controller
     {
-        public static SudokuWindow MainWindow { get; set; }        
+        public static SudokuWindow MainWindow { get; set; }
         public static event PropertyChangedEventHandler StaticPropertyChanged;
 
         private static string logText = string.Empty;
@@ -51,24 +51,6 @@ namespace Sudoku
                 rawGrid = await CSVToArray(filepath);
                 nodeGrid = await Solvers.BasicNode.FromIntArrayAsync(rawGrid);
 
-                for (var y = 0; y < nodeGrid.Length; y++)
-                {
-                    for (var x = 0; x < nodeGrid.Length; x++)
-                    {
-                        Trace.Write(nodeGrid[x][y].Value + " ");
-                    }
-                    Trace.WriteLine("");
-                }
-
-                Trace.WriteLine("\nNode.Square");
-                for (var y = 0; y < nodeGrid.Length; y++)
-                {
-                    for (var x = 0; x < nodeGrid.Length; x++)
-                    {
-                        Trace.Write(nodeGrid[x][y].Z + " ");
-                    }
-                    Trace.WriteLine("");
-                }
             });
 
             Application.Current.Dispatcher.Invoke(new Action(async () =>
@@ -84,6 +66,14 @@ namespace Sudoku
             {
                 LogMessage("Sudoku grid must be loaded before solving.");
                 return;
+            }
+
+            foreach(var col in nodeGrid)
+            {
+                foreach(var cell in col)
+                {
+                    cell.Value = cell.Starting ? cell.Value : 0;
+                }
             }
 
             var alg = await MainWindow.GetAlgortihm();
@@ -104,7 +94,7 @@ namespace Sudoku
                 var timerString = $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}\n\tSolve Time: { Helper.MillisecondsToDesc(solution.TimeToSolve)}\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
 
                 Application.Current.Dispatcher.Invoke(new Action(async () => {
-                    if (solution.Solved)
+                    if (solution.Solved && !enablePlayback)
                     {
                         LogMessage($"Solution found.{timerString}");
                         await MainWindow.UpdateGameGrid(solution.Grid);
@@ -116,7 +106,7 @@ namespace Sudoku
 
                     if (enablePlayback)
                     {
-                    await MainWindow.Playback(solution.Playback);
+                        MainWindow.PlaybackData = solution.Playback;
                     }
                 }));
             });

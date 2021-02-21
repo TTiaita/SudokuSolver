@@ -21,9 +21,5 @@ namespace Sudoku
     /// </summary>
     public partial class SudokuWindow : Window
     {
-        public SudokuWindow()
-        {
-            InitializeComponent();
-        }
     }
 }

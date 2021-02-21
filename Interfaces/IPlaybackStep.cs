@@ -12,6 +12,8 @@ namespace Sudoku.Interfaces
         public int Value { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
+        public int? PrevX { get; set; }
+        public int? PrevY { get; set; }
         public PlaybackAction ActionType { get; set; }
     }
 }

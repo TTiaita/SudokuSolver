@@ -42,9 +42,9 @@ namespace Sudoku.Solvers
             for (var i = 0; i < size; i++)
             {
                 workingData[i] = new OptimisedNode[size];
-                rows[i] = new OptimisedNodeGroup(size);
-                cols[i] = new OptimisedNodeGroup(size);
-                sqrs[i] = new OptimisedNodeGroup(size);
+                rows[i] = new OptimisedNodeGroup(size) { Id = i};
+                cols[i] = new OptimisedNodeGroup(size) { Id = i };
+                sqrs[i] = new OptimisedNodeGroup(size) { Id = i };
             }
 
             for (var y = 0; y < size; y++)
@@ -68,10 +68,11 @@ namespace Sudoku.Solvers
                     workingData[x][y] = cell;
 
                     rows[y].AddNode(cell);
-                    cols[y].AddNode(cell);
+                    cols[x].AddNode(cell);
                     sqrs[cell.Z].AddNode(cell);
                 }
             }
+            playbackData = new Queue<IPlaybackStep>();
 
             timerInit.Stop();
             Ready = true;
@@ -83,6 +84,17 @@ namespace Sudoku.Solvers
             {
                 throw new InvalidOperationException("Solve() cannot be called befgore Init().");
             }
+
+            Trace.WriteLine("");
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    Trace.Write(workingData[x][y].Value + " ");
+                }
+                Trace.WriteLine("");
+            }
+
             timerSolve.Start();
 
             var solved = await RecursiveSolve(0, 0, enablePlayback);
@@ -92,7 +104,7 @@ namespace Sudoku.Solvers
             {
                 Solved = solved,
                 Grid = workingData,
-                Playback = null,
+                Playback = playbackData,
                 TimeToInit = timerInit.ElapsedMilliseconds,
                 TimeToSolve = timerSolve.ElapsedMilliseconds,
                 TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds
@@ -101,30 +113,93 @@ namespace Sudoku.Solvers
 
         private async Task<bool> RecursiveSolve(int x, int y, bool playback)
         {
+            if (y == size)
+            {
+                return true;
+            }
             var cell = workingData[x][y];
-
+            
             if (cell.Starting)
             {
+                if (playback)
+                {
+                    playbackData.Enqueue(new PlaybackStep()
+                    {
+                        ActionType = IPlaybackStep.PlaybackAction.Add,
+                        X = x,
+                        Y = y,
+                        Value = cell.Value
+                    });
+                }
                 return await RecursiveSolve(cell.NextX, cell.NextY, playback);
             }
 
             for (var val = 1; val <= size; val++)
             {
+                if (playback)
+                {
+                    playbackData.Enqueue(new PlaybackStep()
+                    {
+                        ActionType = IPlaybackStep.PlaybackAction.Try,
+                        X = x,
+                        Y = y,
+                        Value = val
+                    });
+                }
+
                 if (IsValid(cell, val))
                 {
                     cell.Value = val;
-                    cell.Blacklist(val);
+                    cell.Blacklist(val); 
+                    if (playback)
+                    {
+                        playbackData.Enqueue(new PlaybackStep()
+                        {
+                            ActionType = IPlaybackStep.PlaybackAction.Add,
+                            X = x,
+                            Y = y,
+                            Value = val
+                        });
+                    }
                     if (await RecursiveSolve(cell.NextX, cell.NextY, playback))
                     {
                         return true;
                     }
                     cell.Value = 0;
                     cell.Whitelist(val);
+                    if (playback)
+                    {
+                        playbackData.Enqueue(new PlaybackStep()
+                        {
+                            ActionType = IPlaybackStep.PlaybackAction.Remove,
+                            X = x,
+                            Y = y,
+                            Value = 0
+                        });
+                    }
                 }
+            }
+            if (playback)
+            {
+                playbackData.Enqueue(new PlaybackStep()
+                {
+                    ActionType = IPlaybackStep.PlaybackAction.Remove,
+                    X = x,
+                    Y = y,
+                    Value = 0
+                });
             }
             return false;
         }
 
-        private bool IsValid(OptimisedNode node, int val) => node.Row.IsAllowed(val) && node.Col.IsAllowed(val) && node.Sqr.IsAllowed(val);
+        private bool IsValid(OptimisedNode node, int val)
+        {
+            var a = node.Row.IsAllowed(val);
+            var b = node.Col.IsAllowed(val);
+            var c = node.Sqr.IsAllowed(val);
+            var result = node.Row.IsAllowed(val) && node.Col.IsAllowed(val) && node.Sqr.IsAllowed(val);
+
+            return result;
+        }
     }
 }
