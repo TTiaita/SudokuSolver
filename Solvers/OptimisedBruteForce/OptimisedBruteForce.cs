@@ -9,14 +9,14 @@ namespace Sudoku.Solvers
     public class OptimisedBruteForce : ISolver
     {
         public bool Ready { get; set; }
-        private OptimisedNodeGroup[] rows;
-        private OptimisedNodeGroup[] cols;
-        private OptimisedNodeGroup[] sqrs;
-        private int size;
-        private OptimisedNode[][] workingData;
-        private Queue<IPlaybackStep> playbackData;
-        private Stopwatch timerInit;
-        private Stopwatch timerSolve;
+        protected OptimisedNodeGroup[] rows;
+        protected OptimisedNodeGroup[] cols;
+        protected OptimisedNodeGroup[] sqrs;
+        protected int size;
+        protected OptimisedNode[][] workingData;
+        protected Queue<IPlaybackStep> playbackData;
+        protected Stopwatch timerInit;
+        protected Stopwatch timerSolve;
 
         public OptimisedBruteForce()
         {
@@ -111,7 +111,7 @@ namespace Sudoku.Solvers
             };
         }
 
-        private async Task<bool> RecursiveSolve(int x, int y, bool playback)
+        protected async Task<bool> RecursiveSolve(int x, int y, bool playback)
         {
             if (y == size)
             {
@@ -192,7 +192,7 @@ namespace Sudoku.Solvers
             return false;
         }
 
-        private bool IsValid(OptimisedNode node, int val)
+        protected bool IsValid(OptimisedNode node, int val)
         {
             var a = node.Row.IsAllowed(val);
             var b = node.Col.IsAllowed(val);

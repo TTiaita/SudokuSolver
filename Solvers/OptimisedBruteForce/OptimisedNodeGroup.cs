@@ -12,7 +12,7 @@ namespace Sudoku.Solvers
         public List<OptimisedNode> Nodes { get; set; }
         public bool[] AllowedValues { get; set; }
         public int Id { get; set; }
-        private bool[] mutable;
+        protected bool[] mutable;
 
         public OptimisedNodeGroup(int size)
         {
@@ -22,7 +22,7 @@ namespace Sudoku.Solvers
             Nodes = new List<OptimisedNode>();
         }
 
-        public void AddNode(OptimisedNode node)
+        public virtual void AddNode(OptimisedNode node)
         {
             Nodes.Add(node);
             if (node.Value != 0)
@@ -32,10 +32,10 @@ namespace Sudoku.Solvers
             }
         }
 
-        public bool IsAllowed(int val) => AllowedValues[val -1];
+        public virtual bool IsAllowed(int val) => AllowedValues[val -1];
 
-        public void Blacklist(int val) => AllowedValues[val -1] = false;
+        public virtual void Blacklist(int val) => AllowedValues[val -1] = false;
 
-        public void Whitelist(int val) => AllowedValues[val -1] = mutable[val -1];
+        public virtual void Whitelist(int val) => AllowedValues[val -1] = mutable[val -1];
     }
 }

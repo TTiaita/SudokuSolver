@@ -81,10 +81,15 @@ namespace Sudoku
             {
                 "Brute force" => new Solvers.BruteForce(),
                 "Optimised brute force" => new Solvers.OptimisedBruteForce(),
-                "Pessimistic depth-first" => new Solvers.PessimisticDepthFirst(),
-                "Asynchronous subdivision" => new Solvers.AsynchronousSubdivision(),
+                "Pessimistic subdivision" => new Solvers.PessimisticSubdivision(),
                 _ => throw new ArgumentOutOfRangeException("Specified algorithm could not be found."),
             };
+
+            if (enablePlayback && nodeGrid.Length > 9)
+            {
+                enablePlayback = false;
+                LogMessage($"Grid is too large for playback.");
+            }
 
             LogMessage($"Solving with '{alg}' algorithm" + (enablePlayback ? " with playback." : "."));
             await Task.Run(async () =>
@@ -96,7 +101,7 @@ namespace Sudoku
                 timerString += $"\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
 
                 Application.Current.Dispatcher.Invoke(new Action(async () => {
-                    if (solution.Solved && !enablePlayback)
+                    if (solution.Solved)
                     {
                         LogMessage($"Solution found.{timerString}");
                     }
@@ -131,7 +136,6 @@ namespace Sudoku
 
             var cols = new int[length][];
 
-            Trace.WriteLine("CSVToArray");
             for (var y = 0; y < rows.Length; y++)
             {
                 var column = rows[y].Split(',');
@@ -139,12 +143,8 @@ namespace Sudoku
                 {
                     cols[x] ??= new int[length];
                     cols[x][y] = int.Parse(column[x].Trim());
-
-                    Trace.Write(cols[x][y] + " ");
                 }
-                Trace.WriteLine("");
             }
-
 
             return cols;
         }

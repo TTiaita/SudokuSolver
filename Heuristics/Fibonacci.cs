@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace Sudoku
+namespace Sudoku.Heuristics
 {
     public class Fibonacci
     {
         private int[] sequence;
-        private int size;
+        public int Size { get; private set; }
 
         public Fibonacci(int length)
         {
@@ -14,11 +14,11 @@ namespace Sudoku
                 throw new ArgumentException("Length must be equal to or greater than four.");
             }
 
-            size = length;
-            sequence = new int[size];
+            Size = length;
+            sequence = new int[Size];
             sequence[0] = 1;
             sequence[1] = 2;
-            for (var i = 2; i < size; i++)
+            for (var i = 2; i < Size; i++)
             {
                 sequence[i] = sequence[i - 1] + sequence[i - 2];
             }
@@ -26,7 +26,7 @@ namespace Sudoku
         
         public int Rank(int position)
         {
-            if (position > size)
+            if (position > Size)
             {
                 throw new ArgumentOutOfRangeException($"'position' is greater than the limit of {sequence.Length}.");
             }

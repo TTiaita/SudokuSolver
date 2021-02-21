@@ -36,7 +36,7 @@ namespace Sudoku
             InitializeComponent();
             frameTick = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(16)
+                Interval = TimeSpan.FromMilliseconds(24)
             };
             frameTick.Tick += FrameTick_Tick;
 
