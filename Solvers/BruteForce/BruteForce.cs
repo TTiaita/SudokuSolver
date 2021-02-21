@@ -10,12 +10,14 @@ namespace Sudoku.Solvers
 {
     public class BruteForce : ISolver
     {
-        protected BasicNode[][] data;
+        protected Node[][] data;
         protected int size;
         protected int square;
 
         protected Stopwatch timerInit;
         protected Stopwatch timerSolve;
+
+        protected Queue<IPlaybackStep> playbackData;
 
         public bool Ready { get; set; } = false;
 
@@ -35,13 +37,13 @@ namespace Sudoku.Solvers
 
             size = rawGrid.Length;
             square = (int)Math.Sqrt(size);
-            data = new BasicNode[size][];
+            data = new Node[size][];
             for (var  i = 0; i < size; i++)
             {
-                data[i] = new BasicNode[size];
+                data[i] = new Node[size];
                 for (var ii = 0; ii < size; ii++)
                 {
-                    data[i][ii] = new BasicNode() {
+                    data[i][ii] = new Node() {
                         Value = rawGrid[i][ii].Value,
                         Starting = rawGrid[i][ii].Starting,
                         X = rawGrid[i][ii].X,
@@ -50,7 +52,8 @@ namespace Sudoku.Solvers
                     };
                 }
             }
-            
+            playbackData = new Queue<IPlaybackStep>();
+
             timerInit.Stop(); 
             Ready = true;
         }
@@ -70,14 +73,14 @@ namespace Sudoku.Solvers
             {
                 Solved = solvedGrid,
                 Grid = data,
-                Playback = null,
+                Playback = playbackData,
                 TimeToInit = timerInit.ElapsedMilliseconds,
                 TimeToSolve = timerSolve.ElapsedMilliseconds,
                 TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds
             };
         }
 
-        protected async Task<bool> RecursiveSolve(int x, int y, bool enablePlayback)
+        protected async Task<bool> RecursiveSolve(int x, int y, bool playback)
         {
             if (y == size)
             {
@@ -93,20 +96,70 @@ namespace Sudoku.Solvers
 
             if (cell.Value != 0 || cell.Starting)
             {
-                return await RecursiveSolve(nextX, nextY, enablePlayback);
+                if (playback)
+                {
+                    playbackData.Enqueue(new PlaybackStep()
+                    {
+                        ActionType = IPlaybackStep.PlaybackAction.Add,
+                        X = x,
+                        Y = y,
+                        Value = cell.Value
+                    });
+                }
+                return await RecursiveSolve(nextX, nextY, playback);
             }
 
-            for (var i = 1; i <= size; i++)
+            for (var val = 1; val <= size; val++)
             {
-                if (!(row.Contains(i) || col.Contains(i) || box.Contains(i)))
+                if (playback)
                 {
-                    cell.Value = i;
-                    if (await RecursiveSolve(nextX, nextY, enablePlayback))
+                    playbackData.Enqueue(new PlaybackStep()
                     {
+                        ActionType = IPlaybackStep.PlaybackAction.Try,
+                        X = x,
+                        Y = y,
+                        Value = val
+                    });
+                }
+                if (!(row.Contains(val) || col.Contains(val) || box.Contains(val)))
+                {
+                    if (playback)
+                    {
+                        playbackData.Enqueue(new PlaybackStep()
+                        {
+                            ActionType = IPlaybackStep.PlaybackAction.Add,
+                            X = x,
+                            Y = y,
+                            Value = val
+                        });
+                    }
+                    cell.Value = val;
+                    if (await RecursiveSolve(nextX, nextY, playback))
+                    {
+                        if (playback)
+                        {
+                            playbackData.Enqueue(new PlaybackStep()
+                            {
+                                ActionType = IPlaybackStep.PlaybackAction.Remove,
+                                X = x,
+                                Y = y,
+                                Value = 0
+                            });
+                        }
                         return true;
                     }
                 }
                 cell.Value = 0;
+            }
+            if (playback)
+            {
+                playbackData.Enqueue(new PlaybackStep()
+                {
+                    ActionType = IPlaybackStep.PlaybackAction.Remove,
+                    X = x,
+                    Y = y,
+                    Value = 0
+                });
             }
             return false;
         }

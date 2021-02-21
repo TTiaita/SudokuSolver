@@ -8,13 +8,8 @@ using System.Threading.Tasks;
 
 namespace Sudoku.Solvers
 {
-    public class OptimisedNode : INode
+    public class OptimisedNode : Node
     {
-        public bool Starting { get; set; }
-        public int Value { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int Z { get; set; }
         public OptimisedNodeGroup Row { get; set; }
         public OptimisedNodeGroup Col { get; set; }
         public OptimisedNodeGroup Sqr { get; set; }
@@ -35,7 +30,7 @@ namespace Sudoku.Solvers
             Sqr.Whitelist(val);
         }
 
-        public static async Task<OptimisedNode[][]> FromIntArrayAsync(int[][] data)
+        public static new async Task<OptimisedNode[][]> FromIntArrayAsync(int[][] data)
         {
             var size = data.Length;
             var squareSize = (int)Math.Sqrt(size);

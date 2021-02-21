@@ -2,17 +2,35 @@
 
 namespace Sudoku
 {
-    public static class Fibonacci
+    public class Fibonacci
     {
-        // F1-F25
-        private static int[] sequence = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 1771, 28657, 46368, 75025 };
+        private int[] sequence;
+        private int size;
 
-        public static int Rank(int position)
+        public Fibonacci(int length)
         {
-            if (position > sequence.Length)
+            if (length < 4)
+            {
+                throw new ArgumentException("Length must be equal to or greater than four.");
+            }
+
+            size = length;
+            sequence = new int[size];
+            sequence[0] = 1;
+            sequence[1] = 2;
+            for (var i = 2; i < size; i++)
+            {
+                sequence[i] = sequence[i - 1] + sequence[i - 2];
+            }
+        }
+        
+        public int Rank(int position)
+        {
+            if (position > size)
             {
                 throw new ArgumentOutOfRangeException($"'position' is greater than the limit of {sequence.Length}.");
             }
+
             return sequence[position];
         }
     }

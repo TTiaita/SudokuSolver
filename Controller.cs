@@ -49,7 +49,7 @@ namespace Sudoku
             {
                 LogMessage($"Loading \"{filepath}\"");
                 rawGrid = await CSVToArray(filepath);
-                nodeGrid = await Solvers.BasicNode.FromIntArrayAsync(rawGrid);
+                nodeGrid = await Solvers.Node.FromIntArrayAsync(rawGrid);
 
             });
 
@@ -86,18 +86,19 @@ namespace Sudoku
                 _ => throw new ArgumentOutOfRangeException("Specified algorithm could not be found."),
             };
 
-            LogMessage($"Solving with '{alg}' algrithm.");
+            LogMessage($"Solving with '{alg}' algorithm" + (enablePlayback ? " with playback." : "."));
             await Task.Run(async () =>
             {
                 await solver.Init(nodeGrid);
                 var solution = await solver.Solve(enablePlayback);
-                var timerString = $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}\n\tSolve Time: { Helper.MillisecondsToDesc(solution.TimeToSolve)}\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
+                var timerString = $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}";
+                timerString += $"\n\tSolve Time: { Helper.MillisecondsToDesc(solution.TimeToSolve)}";
+                timerString += $"\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
 
                 Application.Current.Dispatcher.Invoke(new Action(async () => {
                     if (solution.Solved && !enablePlayback)
                     {
                         LogMessage($"Solution found.{timerString}");
-                        await MainWindow.UpdateGameGrid(solution.Grid);
                     }
                     else
                     {
@@ -107,6 +108,10 @@ namespace Sudoku
                     if (enablePlayback)
                     {
                         MainWindow.PlaybackData = solution.Playback;
+                    }
+                    else
+                    {
+                        await MainWindow.UpdateGameGrid(solution.Grid);
                     }
                 }));
             });
