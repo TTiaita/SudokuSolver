@@ -30,6 +30,8 @@ namespace Sudoku.Solvers
             Sqr.Whitelist(val);
         }
 
+        public virtual bool IsAllowed(int val) => Sqr.IsAllowed(val) && Row.IsAllowed(val) && Col.IsAllowed(val);
+
         public static new async Task<OptimisedNode[][]> FromIntArrayAsync(int[][] data)
         {
             var size = data.Length;

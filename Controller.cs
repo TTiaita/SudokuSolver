@@ -96,7 +96,8 @@ namespace Sudoku
             {
                 await solver.Init(nodeGrid);
                 var solution = await solver.Solve(enablePlayback);
-                var timerString = $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}";
+                var timerString = $"\n\tTotal Steps: { solution.TotalSteps}";
+                timerString += $"\n\tInit Time: { Helper.MillisecondsToDesc(solution.TimeToInit)}";
                 timerString += $"\n\tSolve Time: { Helper.MillisecondsToDesc(solution.TimeToSolve)}";
                 timerString += $"\n\t----\n\tTotal Time: { Helper.MillisecondsToDesc(solution.TimeTotal)}";
 

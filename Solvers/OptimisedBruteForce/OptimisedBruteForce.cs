@@ -9,6 +9,8 @@ namespace Sudoku.Solvers
     public class OptimisedBruteForce : ISolver
     {
         public bool Ready { get; set; }
+        protected long steps;
+        protected bool playbackEnabled;
         protected OptimisedNodeGroup[] rows;
         protected OptimisedNodeGroup[] cols;
         protected OptimisedNodeGroup[] sqrs;
@@ -33,6 +35,7 @@ namespace Sudoku.Solvers
             }
             timerInit.Start();
 
+            steps = 0;
             size = rawGrid.Length;
             workingData = new OptimisedNode[size][];
             rows = new OptimisedNodeGroup[size];
@@ -84,20 +87,10 @@ namespace Sudoku.Solvers
             {
                 throw new InvalidOperationException("Solve() cannot be called befgore Init().");
             }
-
-            Trace.WriteLine("");
-            for (var y = 0; y < size; y++)
-            {
-                for (var x = 0; x < size; x++)
-                {
-                    Trace.Write(workingData[x][y].Value + " ");
-                }
-                Trace.WriteLine("");
-            }
-
             timerSolve.Start();
 
-            var solved = await RecursiveSolve(0, 0, enablePlayback);
+            playbackEnabled = enablePlayback;
+            var solved = await RecursiveSolve(0, 0);
 
             timerSolve.Stop();
             return new Solution()
@@ -107,11 +100,27 @@ namespace Sudoku.Solvers
                 Playback = playbackData,
                 TimeToInit = timerInit.ElapsedMilliseconds,
                 TimeToSolve = timerSolve.ElapsedMilliseconds,
-                TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds
+                TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds,
+                TotalSteps = steps
             };
         }
 
-        protected async Task<bool> RecursiveSolve(int x, int y, bool playback)
+        protected void AddHistory(INode node, IPlaybackStep.PlaybackAction action, int? val = null)
+        {
+            if (playbackEnabled)
+            {
+                playbackData.Enqueue(new PlaybackStep()
+                {
+                    ActionType = action,
+                    X = node.X,
+                    Y = node.Y,
+                    Value = val ?? node.Value
+                });
+            }
+            steps++;
+        }
+
+        protected async Task<bool> RecursiveSolve(int x, int y)
         {
             if (y == size)
             {
@@ -121,85 +130,32 @@ namespace Sudoku.Solvers
             
             if (cell.Starting)
             {
-                if (playback)
-                {
-                    playbackData.Enqueue(new PlaybackStep()
-                    {
-                        ActionType = IPlaybackStep.PlaybackAction.Add,
-                        X = x,
-                        Y = y,
-                        Value = cell.Value
-                    });
-                }
-                return await RecursiveSolve(cell.NextX, cell.NextY, playback);
+                AddHistory(cell, IPlaybackStep.PlaybackAction.Add);
+                return await RecursiveSolve(cell.NextX, cell.NextY);
             }
 
             for (var val = 1; val <= size; val++)
             {
-                if (playback)
-                {
-                    playbackData.Enqueue(new PlaybackStep()
-                    {
-                        ActionType = IPlaybackStep.PlaybackAction.Try,
-                        X = x,
-                        Y = y,
-                        Value = val
-                    });
-                }
+                AddHistory(cell, IPlaybackStep.PlaybackAction.Try, val);
 
-                if (IsValid(cell, val))
+                if (cell.IsAllowed(val))
                 {
                     cell.Value = val;
-                    cell.Blacklist(val); 
-                    if (playback)
-                    {
-                        playbackData.Enqueue(new PlaybackStep()
-                        {
-                            ActionType = IPlaybackStep.PlaybackAction.Add,
-                            X = x,
-                            Y = y,
-                            Value = val
-                        });
-                    }
-                    if (await RecursiveSolve(cell.NextX, cell.NextY, playback))
+                    cell.Blacklist(val);
+                    AddHistory(cell, IPlaybackStep.PlaybackAction.Add);
+                    if (await RecursiveSolve(cell.NextX, cell.NextY))
                     {
                         return true;
                     }
                     cell.Value = 0;
                     cell.Whitelist(val);
-                    if (playback)
-                    {
-                        playbackData.Enqueue(new PlaybackStep()
-                        {
-                            ActionType = IPlaybackStep.PlaybackAction.Remove,
-                            X = x,
-                            Y = y,
-                            Value = 0
-                        });
-                    }
+
+                    AddHistory(cell, IPlaybackStep.PlaybackAction.Remove);
                 }
             }
-            if (playback)
-            {
-                playbackData.Enqueue(new PlaybackStep()
-                {
-                    ActionType = IPlaybackStep.PlaybackAction.Remove,
-                    X = x,
-                    Y = y,
-                    Value = 0
-                });
-            }
+
+            AddHistory(cell, IPlaybackStep.PlaybackAction.Remove);
             return false;
-        }
-
-        protected bool IsValid(OptimisedNode node, int val)
-        {
-            var a = node.Row.IsAllowed(val);
-            var b = node.Col.IsAllowed(val);
-            var c = node.Sqr.IsAllowed(val);
-            var result = node.Row.IsAllowed(val) && node.Col.IsAllowed(val) && node.Sqr.IsAllowed(val);
-
-            return result;
         }
     }
 }

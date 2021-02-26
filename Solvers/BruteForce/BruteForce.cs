@@ -13,6 +13,8 @@ namespace Sudoku.Solvers
         protected Node[][] data;
         protected int size;
         protected int square;
+        protected bool playbackEnabled;
+        protected long steps;
 
         protected Stopwatch timerInit;
         protected Stopwatch timerSolve;
@@ -35,6 +37,7 @@ namespace Sudoku.Solvers
             }
             timerInit.Start();
 
+            steps = 0;
             size = rawGrid.Length;
             square = (int)Math.Sqrt(size);
             data = new Node[size][];
@@ -76,7 +79,8 @@ namespace Sudoku.Solvers
                 Playback = playbackData,
                 TimeToInit = timerInit.ElapsedMilliseconds,
                 TimeToSolve = timerSolve.ElapsedMilliseconds,
-                TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds
+                TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds,
+                TotalSteps = steps
             };
         }
 
@@ -96,71 +100,27 @@ namespace Sudoku.Solvers
 
             if (cell.Value != 0 || cell.Starting)
             {
-                if (playback)
-                {
-                    playbackData.Enqueue(new PlaybackStep()
-                    {
-                        ActionType = IPlaybackStep.PlaybackAction.Add,
-                        X = x,
-                        Y = y,
-                        Value = cell.Value
-                    });
-                }
+                AddHistory(cell, IPlaybackStep.PlaybackAction.Add);
                 return await RecursiveSolve(nextX, nextY, playback);
             }
 
             for (var val = 1; val <= size; val++)
             {
-                if (playback)
-                {
-                    playbackData.Enqueue(new PlaybackStep()
-                    {
-                        ActionType = IPlaybackStep.PlaybackAction.Try,
-                        X = x,
-                        Y = y,
-                        Value = val
-                    });
-                }
+                AddHistory(cell, IPlaybackStep.PlaybackAction.Add, val);
                 if (!(row.Contains(val) || col.Contains(val) || box.Contains(val)))
                 {
-                    if (playback)
-                    {
-                        playbackData.Enqueue(new PlaybackStep()
-                        {
-                            ActionType = IPlaybackStep.PlaybackAction.Add,
-                            X = x,
-                            Y = y,
-                            Value = val
-                        });
-                    }
+                    AddHistory(cell, IPlaybackStep.PlaybackAction.Add);
                     cell.Value = val;
                     if (await RecursiveSolve(nextX, nextY, playback))
                     {
-                        if (playback)
-                        {
-                            playbackData.Enqueue(new PlaybackStep()
-                            {
-                                ActionType = IPlaybackStep.PlaybackAction.Remove,
-                                X = x,
-                                Y = y,
-                                Value = 0
-                            });
-                        }
+                        AddHistory(cell, IPlaybackStep.PlaybackAction.Remove);
                         return true;
                     }
                 }
                 cell.Value = 0;
             }
-            if (playback)
-            {
-                playbackData.Enqueue(new PlaybackStep()
-                {
-                    ActionType = IPlaybackStep.PlaybackAction.Remove,
-                    X = x,
-                    Y = y,
-                    Value = 0
-                });
-            }
+
+            AddHistory(cell, IPlaybackStep.PlaybackAction.Remove);
             return false;
         }
 
@@ -200,6 +160,21 @@ namespace Sudoku.Solvers
                 colData.Add(data[x][i].Value);
             }
             return colData;
+        }
+
+        protected void AddHistory(INode node, IPlaybackStep.PlaybackAction action, int? val = null)
+        {
+            if (playbackEnabled)
+            {
+                playbackData.Enqueue(new PlaybackStep()
+                {
+                    ActionType = action,
+                    X = node.X,
+                    Y = node.Y,
+                    Value = val ?? node.Value
+                });
+            }
+            steps++;
         }
     }
 }

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Sudoku.Interfaces;
+using System;
 
 namespace Sudoku.Heuristics
 {
-    public class Fibonacci
+    public class Fibonacci : IHeuristic
     {
         private int[] sequence;
         public int Size { get; private set; }

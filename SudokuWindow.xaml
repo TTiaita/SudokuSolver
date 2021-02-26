@@ -29,8 +29,8 @@
         <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="3,0,0,3" Text="Algorithm:"/>
         <ComboBox Name="AlgorithmCBox"  Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,3" VerticalContentAlignment="Center">
             <ComboBoxItem Content="Brute force" />
-            <ComboBoxItem Content="Optimised brute force"  IsSelected="True"/>
-            <ComboBoxItem Content="Pessimistic subdivision" />
+            <ComboBoxItem Content="Optimised brute force" />
+            <ComboBoxItem Content="Pessimistic subdivision" IsSelected="True" />
         </ComboBox>
         <Button Name="LoadBtn" Content="Load File" Grid.Column="1" Grid.Row="3" Click="LoadBtn_Click" Margin="0,3,0,3"/>
         <Button Name="SolveBtn" Content="Solve" Grid.Column="2" Grid.Row="3" Click="SolveBtn_Click" Margin="0,3,0,3"/>

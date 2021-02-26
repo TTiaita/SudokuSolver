@@ -11,14 +11,12 @@ namespace Sudoku.Solvers
     public class PessimisticSubdivision : ISolver
     {
         public bool Ready { get; set; }
+        protected bool playbackEnabled;
+        protected long steps;
 
         protected GraphGroup[] rows;
         protected GraphGroup[] cols;
         protected GraphGroup[] sqrs;
-        protected List<GraphGroup> rowsSorted;
-        protected List<GraphGroup> colsSorted;
-        protected List<GraphGroup> sqrsSorted;
-        protected bool[] sqrsSolved;
 
         protected int size;
         protected int squareSize;
@@ -26,7 +24,9 @@ namespace Sudoku.Solvers
         protected Queue<IPlaybackStep> playbackData;
         protected Stopwatch timerInit;
         protected Stopwatch timerSolve;
+
         protected Fibonacci fibonacci;
+        protected GraphNode lastNode;
 
         public PessimisticSubdivision()
         {
@@ -35,7 +35,7 @@ namespace Sudoku.Solvers
             Ready = false;
         }
 
-        public Task Init(INode[][] rawGrid)
+        public async Task Init(INode[][] rawGrid)
         {
             if (!Helper.IsValidSudoku(rawGrid))
             {
@@ -48,6 +48,7 @@ namespace Sudoku.Solvers
                 fibonacci = new Fibonacci(rawGrid.Length);
             }
 
+            steps = 0;
             size = rawGrid.Length;
             squareSize = (int)Math.Sqrt(size);
             graph = new GraphNode[size][];
@@ -55,19 +56,12 @@ namespace Sudoku.Solvers
             cols = new GraphGroup[size];
             sqrs = new GraphGroup[size];
 
-            rowsSorted = new List<GraphGroup>();
-            colsSorted = new List<GraphGroup>();
-            sqrsSorted = new List<GraphGroup>();
-
             for (var i = 0; i < size; i++)
             {
                 graph[i] = new GraphNode[size];
                 rows[i] = new GraphGroup(size, fibonacci) { Id = i };
                 cols[i] = new GraphGroup(size, fibonacci) { Id = i };
                 sqrs[i] = new GraphGroup(size, fibonacci) { Id = i };
-                rowsSorted.Add(rows[i]);
-                colsSorted.Add(cols[i]);
-                sqrsSorted.Add(sqrs[i]);
             }
 
             for (var y = 0; y < size; y++)
@@ -81,16 +75,12 @@ namespace Sudoku.Solvers
                         Y = y,
                         Z = rawCell.Z,
                         Value = rawCell.Value,
-                        NextX = x == (size - 1) ? 0 : x + 1,
-                        NextY = x == (size - 1) ? y + 1 : y,
                         Starting = rawCell.Starting,
                         Row = rows[y],
                         Col = cols[x],
                         Sqr = sqrs[rawCell.Z],
                     };
                     graph[x][y] = cell;
-                    sqrs[cell.Z].SubGroups.Add(rows[y]);
-                    rows[y].SubGroups.Add(cols[x]);
 
                     rows[y].AddNode(cell);
                     cols[x].AddNode(cell);
@@ -99,54 +89,109 @@ namespace Sudoku.Solvers
             }
 
             playbackData = new Queue<IPlaybackStep>();
+            Ready = true;
 
-            return null;
+            timerInit.Stop();
         }
 
         public async Task<ISolution> Solve(bool enablePlayback)
         {
+            if (!Ready)
+            {
+                throw new InvalidOperationException("Solve() cannot be called befgore Init().");
+            }
+            timerSolve.Start();
+
+            playbackEnabled = enablePlayback;
             var solved = await RecursiveSolve();
-            return null;
+
+            timerSolve.Stop();
+            return new Solution()
+            {
+                Solved = solved,
+                Grid = graph,
+                Playback = playbackData,
+                TimeToInit = timerInit.ElapsedMilliseconds,
+                TimeToSolve = timerSolve.ElapsedMilliseconds,
+                TimeTotal = timerInit.ElapsedMilliseconds + timerSolve.ElapsedMilliseconds,
+                TotalSteps = steps,
+            };
         }
 
         protected async Task<bool> RecursiveSolve()
         {
-            var node = GetNext();
+            var node = await GetNext();
             if (node == null)
             {
                 // Grid is complete
                 return true;
             }
 
+            for(var val = 1; val <= size; val++)
+            {
+                AddHistory(node, IPlaybackStep.PlaybackAction.Try, val);
+
+                if (node.IsAllowed(val))
+                {
+                    node.Value = val;
+                    node.Set(val, lastNode);
+                    lastNode = node;
+
+                    AddHistory(node, IPlaybackStep.PlaybackAction.Add);
+
+                    if (await RecursiveSolve())
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        node.Unset();
+                        AddHistory(node, IPlaybackStep.PlaybackAction.Remove);
+                    }
+                }
+            }
+
+            node.Unset();
+            lastNode.Unset();
+            AddHistory(node, IPlaybackStep.PlaybackAction.Remove);
 
             return false;
         }
 
+        protected void AddHistory(INode node, IPlaybackStep.PlaybackAction action, int? val = null)
+        {
+            if (playbackEnabled)
+            {
+                playbackData.Enqueue(new PlaybackStep()
+                {
+                    ActionType = action,
+                    X = node.X,
+                    Y = node.Y,
+                    Value = val ?? node.Value
+                });
+            }
+            steps++;
+        }
+
         protected async Task<GraphNode> GetNext()
         {
-            GraphNode next = null;
+            // Incomplete square with highest rank
+            var square = sqrs
+                .Where(a => a.Filled != size)
+                .OrderBy(a => a.Rank)
+                .LastOrDefault();
 
-            do
+            // If all squares are complete then all cells are filled
+            if (square == null)
             {
-                // Incomplete square with highest rank
-                var square = sqrsSorted.OrderBy(a => a.Rank).LastOrDefault(a => a.Filled != size);
-                if (square == null)
-                {
-                    return null; 
-                }
+                return null; 
+            }
 
-                var xStart = (square.Id * squareSize) % size;
-                var yStart = (square.Id / squareSize) * squareSize;
-
-                // Incomplete row with highest rank in square
-                var row = square.SubGroups.OrderBy(a => a.Rank).Last(a => a.Filled != size);
-
-                // Incomplete column with highest rank row
-                var col = row.SubGroups.OrderBy(a => a.Rank).Last(a => a.Filled != size);
-                next = graph[col.Id][row.Id];
-            } while (next == null);
-
-            return next;
+            // Within square highest ranked unfilled cell
+            return square.Nodes
+                .Where(a => a.Value == 0)
+                .OrderBy(a => a.Rank)
+                .LastOrDefault();
         }
     }
 }

@@ -11,5 +11,6 @@ namespace Sudoku.Solvers
         public long TimeToInit { get; set; }
         public long TimeToSolve { get; set; }
         public long TimeTotal { get; set; }
+        public long TotalSteps { get; set; }
     }
 }

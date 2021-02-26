@@ -84,19 +84,19 @@ namespace Sudoku
         private async void SolveBtn_Click(object sender, RoutedEventArgs e)
         {
             DisableUI();
-            try
-            {
+            //try
+            //{
                 await ClearGameGrid();
                 await Controller.SolveSudoku(false);
-            }
+            /*}
             catch (Exception ex)
             {
                 Controller.LogMessage($"{ex.GetType()} occurred.\n\t{ex.Message}");
             }
             finally 
-            {
+            {//*/
                 EnableUI();
-            }
+            //}
         }
 
         private async void PlaybackBtn_Click(object sender, RoutedEventArgs e)
