@@ -85,7 +85,7 @@ namespace Sudoku
                 _ => throw new ArgumentOutOfRangeException("Specified algorithm could not be found."),
             };
 
-            if (enablePlayback && nodeGrid.Length > 9)
+            if (enablePlayback && nodeGrid.Length > 16)
             {
                 enablePlayback = false;
                 LogMessage($"Grid is too large for playback.");

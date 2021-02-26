@@ -141,7 +141,7 @@ namespace Sudoku {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/Sudoku;V1.0.0.0;component/sudokuwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/Sudoku;component/sudokuwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\SudokuWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
